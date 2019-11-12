@@ -30,6 +30,10 @@ So after that the script use the session of the concerned ip proxy to emit te re
 
 ## How to use it
 
+### DEFAULT MODE
+
+#### Usage
+
 To use it you just have to run main.py and follow instructions
 Just hit:
 
@@ -40,17 +44,50 @@ git clone https://github.com/Sanix-Darker/riq1.git
 # We browse to the project
 cd path/to/the/project
 
-# Then we browse to ./app/
-cd app
-python main.py
+python app/main.py
+# Then follow instructions
 ```
 
-## Demo
+#### Demo
 
 <img src="./images/demo.gif"/>
 
 
+
+### CLI MODE
+
+#### Usage
+
+How to use the cli mode:
+
+```shell
+$ python ricli.py -h
+usage: ricli.py [-h] [-u URL] [-t TYPE] [-i NB_IP] [-r NB_REQUEST]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -u URL, --url URL     The target URL
+  -t TYPE, --type TYPE  The type of the request (GET, POST)
+  -i NB_IP, --nb_ip NB_IP
+                        The number of ip address you want them to perform the
+                        request
+  -r NB_REQUEST, --nb_request NB_REQUEST
+                        The number of request that will be done per ip address
+
+```
+
+Example of usage:
+
+```shell
+python ./ricli.py -u http://example.com -i 5 -r 1
+```
+
+#### Demo
+
+<img src="./images/cli_demo.gif" />
+
 ## MIT LICENSE
+
 
 ## Author
 

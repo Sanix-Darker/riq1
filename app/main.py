@@ -13,10 +13,6 @@ print("[+] Your current Ip info:"+getIpInfo())
 
 url = input("[+] Your url: ")
 
-with open(IP_LIST, "r+") as fil_:
-    ip_list = fil_.readlines()
-    for ip in ip_list:
-        time.sleep(1) # We wait 1s before proceed
-        print("[+] Your current Ip info:"+getIpInfo(ip))
-        res = sendGet(ip, url)
-        print("[+] ------ Request sent successfully !\n")
+nb_request = int(input("[+] THe number of request per IP you want: "))
+
+sendRequests(IP_LIST, url, nb_request)

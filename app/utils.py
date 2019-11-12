@@ -3,14 +3,24 @@ import json
 from lxml import html
 import time
 from os import path as ospath
+from sys import exit
 
 
-from settings import IP_LIST, PROXY_VPN_LIST, MAXIMUM_LIFE
+try: from settings import IP_LIST, PROXY_VPN_LIST, MAXIMUM_LIFE
+except Exception as es:
+    try:
+        from app.settings import IP_LIST, PROXY_VPN_LIST, MAXIMUM_LIFE
+    except Exception as es:
+        print("[+] An error importing settings file!")
+        exit()
 
 s = requests.Session()
 
 
 def modification_date(filename):
+    if ospath.exists(filename) == False:
+        with open(filename, "w+") as fik:
+            fik.write("")
     return ospath.getmtime(filename)
 
 
@@ -74,7 +84,8 @@ def save_ip(ip, port, country=""):
             print("[+] Saving '"+ip+":"+port+"#"+country+"'")
             print("[+] Press Ctrl+C to stop anytime the fetching process.")
             print("[+] ----")
-            time.sleep(0.5)
+            time.sleep(0.2)
+
 
 
 def update_ip_list(limit = None):
@@ -87,14 +98,15 @@ def update_ip_list(limit = None):
     if ((life) > MAXIMUM_LIFE or num_line < 3): # if theipList file have more than 100s of life we erase
         print("[+] Will proceed on fetching new IP address, your ip_list life: "+str(life)+" seconds")
         print("[+] Press Ctrl+C to stop anytime the fetching process.")
-        time.sleep(3)
+        time.sleep(1)
         try:
             with open(PROXY_VPN_LIST, "r+") as frr:
                 site_list = json.loads(frr.read())
                 # We empty the file of ip
-                with open(IP_LIST, "w+") as frr_erase: frr_erase.write("")
-                count = 0
-                stoploop = False
+                with open(IP_LIST, "w+") as frr_erase:
+                    frr_erase.write("")
+
+                count, stoploop = 0, False
                 for site in site_list:
                     # We stop the loop if we reach a nlimit number of ip address we wanted at the start
                     if limit != None or stoploop == True:
@@ -126,7 +138,38 @@ def update_ip_list(limit = None):
                             ip_address, ports, countries = tree.xpath(site['ip_address']), tree.xpath(site['port']), tree.xpath(site['country'])
                             for i, ip in enumerate(ip_address): save_ip(ip, ports[i], countries[i])
                         except Exception as es: pass
-                
+
         except KeyboardInterrupt as es: print("[+] Stoping the fetching.")
     else:
         print("[+] Escape the fetching of ip address, it's too early, the life : "+str(life)+" seconds")
+
+
+
+def sendRequests(url, nb_request):
+    """[summary]
+
+    Arguments:
+        IP_LIST {[type]} -- [description]
+        url {[type]} -- [description]
+        nb_request {[type]} -- [description]
+    """
+    print("[+] IP_LIST: ", IP_LIST)
+    print("[+] Your current Ip info:"+getIpInfo())
+    with open(IP_LIST, "r+") as fil_:
+        for ip in fil_.readlines():
+            for i in range(0, nb_request):
+                print("\n[+] -------------------------")
+                print("[+] Your current IP info:"+getIpInfo(ip))
+                res = sendGet(ip, url)
+                print("[+] -- Request ["+str(i)+"], ip: ["+str(ip)+"], url: ["+str(url).replace("\n", "").replace("\\n", "")+"] sent successfully !\n")
+
+
+
+def main_core(nb_request, url):
+    """[The main process]
+
+    Arguments:
+        nb_request {[type]} -- [description]
+        url {[type]} -- [description]
+    """
+    sendRequests(url, nb_request)
