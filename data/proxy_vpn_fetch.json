@@ -14,5 +14,13 @@
         "country":2,
         "type":"table",
         "tr_array": "//table[contains(@id, 'proxylisttable')]//tr"
+    },
+    {
+        "url":"http://www.gatherproxy.com/",
+        "ip_address_key":"PROXY_IP",
+        "port_key":"PROXY_PORT",
+        "country_key":"PROXY_COUNTRY",
+        "type":"json",
+        "object_array": "//script//text()"
     }
 ]

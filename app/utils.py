@@ -5,6 +5,8 @@ import time
 from os import path as ospath
 from sys import exit
 
+import random
+
 import js2py
 
 try: from settings import IP_LIST, PROXY_VPN_LIST, MAXIMUM_LIFE
@@ -34,9 +36,11 @@ def getIpInfo(ip=None):
     Returns:
         [type] -- [description]
     """
-    print("[+] ip:",ip)
-    if ip != None: rr = requests.get("https://ipinfo.io/"+ip.split(":")[0]+"/geo", headers=headers)
-    else: rr = requests.get("https://ipinfo.io/", headers=headers)
+
+    if ip != None:
+        print("[+] - Ip:",ip)
+        rr = requests.get("https://ipinfo.io/"+ip.split(":")[0]+"/geo")
+    else: rr = requests.get("https://ipinfo.io/")
 
     try: return json.dumps(json.loads(rr.content), indent=4, sort_keys=True)
     except Exception as es: return "{}"
@@ -92,6 +96,8 @@ def save_ip(ip, port, country=""):
 
 
 def update_ip_list(limit = None):
+    if limit == 0: limit = 1
+    print("[+] ---")
     print("[+] Fetching ip address, please wait a few seconds...")
     life = time.time() - modification_date(IP_LIST)
 
@@ -100,17 +106,23 @@ def update_ip_list(limit = None):
 
     if ((life) > MAXIMUM_LIFE or num_line < 3): # if theipList file have more than 100s of life we erase
         print("[+] Will proceed on fetching new IP address, your ip_list life: "+str(life)+" seconds")
-        print("[+] Press Ctrl+C to stop anytime the fetching process.")
+        print("\n[+] Press Ctrl+C to stop anytime the fetching process.")
         time.sleep(1)
         try:
             with open(PROXY_VPN_LIST, "r+") as frr:
                 site_list = json.loads(frr.read())
+
+                # We shuffle the array
+                random.shuffle(site_list)
+                random.shuffle(site_list)
+
                 # We empty the file of ip
                 with open(IP_LIST, "w+") as frr_erase:
                     frr_erase.write("")
 
                 count, stoploop = 0, False
                 for site in site_list:
+                    print("[+] URL-TO-FETCH:", site["url"])
                     # We stop the loop if we reach a nlimit number of ip address we wanted at the start
                     if limit != None or stoploop == True:
                         if count >= limit: break
@@ -120,36 +132,75 @@ def update_ip_list(limit = None):
 
                     # if ips are listed in a table and not referenced by a sepcific class or id
                     if type_ == "table":
-                        print("[+] Type : table...")
+                        # print("[+] Type : table...")
                         tr_array = tree.xpath(site['tr_array'])
-                        for tr in tr_array:
+                        # print("[+] tr_array: ", tr_array)
+                        for ii, tr in enumerate(tr_array):
                             td_array = tr.xpath('./td//text()')
                             for i, td_ in enumerate(td_array):
                                 td_array[i] = td_.replace("\r", "").replace("\t", "").replace("\n", "").replace("\\r", "").replace("\\t", "").replace("\\n", "").replace(" ", "")
 
-                            print("[+] td_array: ", td_array)
-                            try:
-                                site_ip_address = ""
-                                # print("[+] site_ip_address: ", td_array[site['ip_address']])
-                                if "document." in td_array[site['ip_address']]:
-                                    site_ip_address_to_evaluate = td_array[site['ip_address']].replace("document.write(", "function r(){return ").replace(");", ";}r()").replace("r(;}", "")
-                                    # print("[+] site_ip_address_to_evaluate: ", site_ip_address_to_evaluate)
-                                    site_ip_address = js2py.eval_js(site_ip_address_to_evaluate)
-                                else:
-                                    site_ip_address = td_array[site['ip_address']]
+                            # print("[+] td_array: ", td_array)
+                            if len(td_array) > 2:
+                                try:
+                                    site_ip_address, port_, country_ = "", "", ""
 
-                                # print("[+] site_ip_address: ", site_ip_address)
+                                    if site['port'] == -1: port_ = tr.xpath(site['port_selector'])
+                                    else: port_ = td_array[site['port']]
 
-                                ip, port, country = site_ip_address, td_array[site['port']], td_array[site['country']]
-                                print(ip, port, country)
-                                save_ip(ip, port, country)
-                                # We stop the loop if we reach a nlimit number of ip address we wanted at the start
-                                if limit != None:
-                                    if count >= limit:
-                                        stoploop = True
-                                        break
-                                count += 1
-                            except Exception as es: pass
+                                    if site['country'] == -1: country_ = tr.xpath(site['country_selector'])
+                                    else: country_ = td_array[site['country']]
+
+                                    if site['ip_address'] == -1:
+                                        site_ip_address = tr.xpath([site['ip_address_selector']])
+                                    else:
+                                        # print("[+] site_ip_address: ", td_array[site['ip_address']])
+                                        if "document." in td_array[site['ip_address']]:
+                                            site_ip_address_to_evaluate = td_array[site['ip_address']].replace("document.write(", "function r(){return ").replace(");", ";}r()").replace("r(;}", "")
+
+                                            site_ip_address = js2py.eval_js(site_ip_address_to_evaluate)
+                                        else:
+                                            site_ip_address = td_array[site['ip_address']]
+
+                                    # print("[+] site_ip_address: ", site_ip_address) # ip_address_selector
+
+                                    if "." in site_ip_address: # si on a des points dans ll'adresse
+                                        ip, port, country = site_ip_address, port_, country_
+                                        save_ip(ip, port, country)
+                                        # We stop the loop if we reach a nlimit number of ip address we wanted at the start
+                                        if limit != None:
+                                            if count >= limit:
+                                                stoploop = True
+                                                break
+                                        count += 1
+                                except Exception as es: pass
+                    elif type_ == "json":
+                        object_array = tree.xpath(site['object_array'])
+                        obj_brak, obj_json_elt = False, "["
+                        # print("object_array: ", object_array)
+                        for i, obj_element in enumerate(object_array):
+                            if i > 0 and i < (len(object_array)-5):
+                                for obj in obj_element:
+                                    if not obj_brak:
+                                        if '{' in obj:
+                                            obj_brak = True
+                                            obj_json_elt += '{'
+                                    elif '}' in obj:
+                                        obj_brak = False
+                                        obj_json_elt += '},'
+                                    else:
+                                        obj_json_elt += obj
+                        obj_json_elt += "]"
+                        obj_json_elt = json.loads(obj_json_elt.replace("},]", "}]"))
+
+                        for ojson in obj_json_elt:
+                            save_ip(ojson["PROXY_IP"], ojson["PROXY_PORT"], ojson["PROXY_COUNTRY"])
+                            if limit != None:
+                                if count >= limit:
+                                    stoploop = True
+                                    break
+                            count += 1
+                        # print("\n\n>>>>>>> obj_json_elt: ", obj_json_elt)
                     else: # For the specific referencing
                         try:
                             ip_address, ports, countries = tree.xpath(site['ip_address']), tree.xpath(site['port']), tree.xpath(site['country'])
@@ -157,12 +208,11 @@ def update_ip_list(limit = None):
                         except Exception as es: pass
 
         except KeyboardInterrupt as es: print("[+] Stoping the fetching.")
-    else:
-        print("[+] Escape the fetching of ip address, it's too early, the life : "+str(life)+" seconds")
+    else: print("[+] Escape the fetching of ip address, it's too early, the life : "+str(life)+" seconds")
 
 
 
-def sendRequests(url, nb_request):
+def sendRequests(url, nb_request, limit=None):
     """[summary]
 
     Arguments:
@@ -170,15 +220,30 @@ def sendRequests(url, nb_request):
         url {[type]} -- [description]
         nb_request {[type]} -- [description]
     """
-    print("[+] IP_LIST: ", IP_LIST)
     print("[+] Your current Ip info:"+getIpInfo())
+    print("[+] ==========================================================================")
     with open(IP_LIST, "r+") as fil_:
-        for ip in fil_.readlines():
+        ip_list_array = fil_.readlines()
+        random.shuffle(ip_list_array)
+        random.shuffle(ip_list_array)
+        random.shuffle(ip_list_array)
+        count = 0
+        stoploop = False
+        for ip in ip_list_array:
+
+            if (stoploop == True): break
+
             for i in range(0, nb_request):
-                print("\n[+] -------------------------")
-                print("[+] New IP info:"+getIpInfo(ip))
+                print("\n[+] ------------------------------")
+                print("[+] - New IP info:"+getIpInfo(ip))
                 res = sendGet(ip, url)
-                print("[+] -- Request ["+str(i)+"], ip: ["+str(ip)+"], url: ["+str(url).replace("\n", "").replace("\\n", "")+"] sent successfully !\n")
+                print("[+] - Request ["+str(i+1)+"], ip: ["+str(ip).replace("\n", "").replace("\\n", "")+"], url: ["+str(url)+"], length: "+str(len(res))+" !")
+                print("[+] --------------------------------\n")
+                if limit != None:
+                    if count >= limit:
+                        stoploop = True
+                        break
+                count += 1
 
 
 

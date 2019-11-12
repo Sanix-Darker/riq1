@@ -16,7 +16,7 @@ if __name__ == "__main__":
     presentation()
 
     # We update the ip list
-    update_ip_list(prs.nb_ip)
+    update_ip_list(prs.nb_ip-1)
 
     # execute only if run as a script
     main_core(prs.nb_request, prs.url)

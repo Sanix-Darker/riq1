@@ -24,5 +24,14 @@
             "upgrade-insecure-requests": "1",
             "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36"
         }
+    },
+    {
+        "url":"http://www.freeproxylists.net/",
+        "ip_address":-1,
+        "ip_address_selector":"./td//a//text()",
+        "port":1,
+        "country":2,
+        "type":"table",
+        "tr_array": "//table[contains(@class, 'DataGrid')]//tr"
     }
 ]
