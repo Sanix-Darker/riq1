@@ -1,0 +1,9 @@
+[
+    {
+        "url":"https://free-proxy-list.net/",
+        "ip_address":"//table[contains(@id, 'proxylisttable')]//tr/td//text()",
+        "port":"//table[contains(@id, 'proxylisttable')]//tr/td//text()",
+        "country":"//table[contains(@id, 'proxylisttable')]//tr/td//text()",
+        "type":"table"
+    }
+]
