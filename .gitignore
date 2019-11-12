@@ -1,3 +1,4 @@
 .history
 .vscode
 *__pycache__
+*ips.txt
