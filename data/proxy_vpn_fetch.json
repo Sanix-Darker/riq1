@@ -1,5 +1,13 @@
 [
     {
+        "url":"https://www.proxynova.com/proxy-server-list/",
+        "ip_address":1,
+        "port":5,
+        "country":20,
+        "type":"table",
+        "tr_array": "//table[contains(@id, 'tbl_proxy_list')]//tr"
+    },
+    {
         "url":"https://free-proxy-list.net/",
         "ip_address":0,
         "port":1,

@@ -1,0 +1,28 @@
+[
+    {
+        "url":"https://hidemy.name/en/proxy-list/",
+        "ip_address":0,
+        "port":1,
+        "country":2,
+        "type":"table",
+        "tr_array": "//table[contains(@class, 'proxy__t')]//tr",
+        "headers": {
+            ":authority": "hidemy.name",
+            ":method": "GET",
+            ":path": "/en/proxy-list/",
+            ":scheme": "https",
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
+            "accept-encoding": "gzip, deflate, br",
+            "accept-language": "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7",
+            "cache-control": "no-cache",
+            "cookie": "__cfduid=dfbe5f5589ce52be7e776cdf013560a5b1573493707; cf_clearance=993e4c4489deed89d98b53d62f4206803507b338-1573493711-0-150; PAPVisitorId=a005972c12a48197ca5722b2a4dd1f9K; PAPVisitorId=a005972c12a48197ca5722b2a4dd1f9K; _ga=GA1.2.1227661596.1573493724; _gid=GA1.2.1545506177.1573493724; _ym_uid=1573493724873083896; _ym_d=1573493724; _ym_isad=1; _ym_wasSynced=%7B%22time%22%3A1573493726257%2C%22params%22%3A%7B%22eu%22%3A0%7D%2C%22bkParams%22%3A%7B%7D%7D; _fbp=fb.1.1573493726984.551637452; jv_enter_ts_EBSrukxUuA=1573493730210; jv_visits_count_EBSrukxUuA=1; _ym_visorc_42065329=w; jv_pages_count_EBSrukxUuA=2",
+            "pragma": "no-cache",
+            "referer": "https://hidemy.name/en/proxy-list/",
+            "sec-fetch-mode": "navigate",
+            "sec-fetch-site": "same-origin",
+            "sec-fetch-user": "?1",
+            "upgrade-insecure-requests": "1",
+            "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36"
+        }
+    }
+]

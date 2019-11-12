@@ -1,6 +1,7 @@
 from app.utils import *
 import argparse
 
+# example command python ./ricli.py -u http://example.com -i 5 -r 1
 # Initialize the arguments
 prs = argparse.ArgumentParser()
 prs.add_argument('-u', '--url', help='The target URL', type=str, default="https://example.com")

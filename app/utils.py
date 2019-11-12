@@ -5,6 +5,7 @@ import time
 from os import path as ospath
 from sys import exit
 
+import js2py
 
 try: from settings import IP_LIST, PROXY_VPN_LIST, MAXIMUM_LIFE
 except Exception as es:
@@ -15,7 +16,7 @@ except Exception as es:
         exit()
 
 s = requests.Session()
-
+headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
 
 def modification_date(filename):
     if ospath.exists(filename) == False:
@@ -33,10 +34,12 @@ def getIpInfo(ip=None):
     Returns:
         [type] -- [description]
     """
-    if ip != None: rr = requests.get("https://ipinfo.io/"+ip.split(":")[0]+"/geo")
-    else: rr = requests.get("https://ipinfo.io/")
+    print("[+] ip:",ip)
+    if ip != None: rr = requests.get("https://ipinfo.io/"+ip.split(":")[0]+"/geo", headers=headers)
+    else: rr = requests.get("https://ipinfo.io/", headers=headers)
 
-    return json.dumps(json.loads(rr.content), indent=4, sort_keys=True)
+    try: return json.dumps(json.loads(rr.content), indent=4, sort_keys=True)
+    except Exception as es: return "{}"
 
 
 def presentation():
@@ -63,7 +66,7 @@ def sendGet(ip, url):
         [type] -- [description]
     """
     s.proxies = {"http": "http://"+ip+"/"}
-    r = s.get(url)
+    r = s.get(url, headers=headers)
     return r.text
 
 
@@ -112,7 +115,7 @@ def update_ip_list(limit = None):
                     if limit != None or stoploop == True:
                         if count >= limit: break
 
-                    r = requests.get(site["url"])
+                    r = requests.get(site["url"], headers=headers)
                     tree, type_ = html.fromstring(r.content), site['type']
 
                     # if ips are listed in a table and not referenced by a sepcific class or id
@@ -121,11 +124,25 @@ def update_ip_list(limit = None):
                         tr_array = tree.xpath(site['tr_array'])
                         for tr in tr_array:
                             td_array = tr.xpath('./td//text()')
+                            for i, td_ in enumerate(td_array):
+                                td_array[i] = td_.replace("\r", "").replace("\t", "").replace("\n", "").replace("\\r", "").replace("\\t", "").replace("\\n", "").replace(" ", "")
+
                             print("[+] td_array: ", td_array)
                             try:
-                                ip, port, country = td_array[site['ip_address']], td_array[site['port']], td_array[site['country']]
-                                save_ip(ip, port, country)
+                                site_ip_address = ""
+                                # print("[+] site_ip_address: ", td_array[site['ip_address']])
+                                if "document." in td_array[site['ip_address']]:
+                                    site_ip_address_to_evaluate = td_array[site['ip_address']].replace("document.write(", "function r(){return ").replace(");", ";}r()").replace("r(;}", "")
+                                    # print("[+] site_ip_address_to_evaluate: ", site_ip_address_to_evaluate)
+                                    site_ip_address = js2py.eval_js(site_ip_address_to_evaluate)
+                                else:
+                                    site_ip_address = td_array[site['ip_address']]
 
+                                # print("[+] site_ip_address: ", site_ip_address)
+
+                                ip, port, country = site_ip_address, td_array[site['port']], td_array[site['country']]
+                                print(ip, port, country)
+                                save_ip(ip, port, country)
                                 # We stop the loop if we reach a nlimit number of ip address we wanted at the start
                                 if limit != None:
                                     if count >= limit:
@@ -159,7 +176,7 @@ def sendRequests(url, nb_request):
         for ip in fil_.readlines():
             for i in range(0, nb_request):
                 print("\n[+] -------------------------")
-                print("[+] Your current IP info:"+getIpInfo(ip))
+                print("[+] New IP info:"+getIpInfo(ip))
                 res = sendGet(ip, url)
                 print("[+] -- Request ["+str(i)+"], ip: ["+str(ip)+"], url: ["+str(url).replace("\n", "").replace("\\n", "")+"] sent successfully !\n")
 

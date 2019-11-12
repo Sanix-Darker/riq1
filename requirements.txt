@@ -1,1 +1,2 @@
 requests
+js2py==0.66
