@@ -22,5 +22,15 @@
         "country_key":"PROXY_COUNTRY",
         "type":"json",
         "object_array": "//script//text()"
+    },
+    {
+        "url":"http://spys.one/en/",
+        "ip_address":-1,
+        "ip_address_selector": "./td//font[contains(@class, 'spy14')]//text",
+        "port":1,
+        "country":-1,
+        "country_selector":"./td//font[contains(@class, 'spy14')]//acronym//text()",
+        "type":"table_port_hide",
+        "tr_array": "//table[contains(@width, '65%')]//tr"
     }
 ]

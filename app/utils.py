@@ -9,10 +9,13 @@ import random
 
 import js2py
 
-try: from settings import IP_LIST, PROXY_VPN_LIST, MAXIMUM_LIFE
+try:
+    from settings import IP_LIST, PROXY_VPN_LIST, MAXIMUM_LIFE
+    from checkport import *
 except Exception as es:
     try:
         from app.settings import IP_LIST, PROXY_VPN_LIST, MAXIMUM_LIFE
+        from app.checkport import *
     except Exception as es:
         print("[+] An error importing settings file!")
         exit()
@@ -104,10 +107,10 @@ def update_ip_list(limit = None):
     num_line = 0
     with open(IP_LIST, "r+") as frr_check: num_line = len(frr_check.readlines())
 
-    if ((life) > MAXIMUM_LIFE or num_line < 3): # if theipList file have more than 100s of life we erase
+    if ((life) > MAXIMUM_LIFE or num_line < 5): # if theipList file have more than 100s of life we erase
         print("[+] Will proceed on fetching new IP address, your ip_list life: "+str(life)+" seconds")
         print("\n[+] Press Ctrl+C to stop anytime the fetching process.")
-        time.sleep(1)
+
         try:
             with open(PROXY_VPN_LIST, "r+") as frr:
                 site_list = json.loads(frr.read())
@@ -122,91 +125,103 @@ def update_ip_list(limit = None):
 
                 count, stoploop = 0, False
                 for site in site_list:
-                    print("[+] URL-TO-FETCH:", site["url"])
-                    # We stop the loop if we reach a nlimit number of ip address we wanted at the start
-                    if limit != None or stoploop == True:
-                        if count >= limit: break
+                    print("[+] URL-TO-FETCH:", site["url"], "Ctrl+C to skip this URL to another")
+                    try:
+                        # We stop the loop if we reach a nlimit number of ip address we wanted at the start
+                        if limit != None or stoploop == True:
+                            if count >= limit: break
 
-                    r = requests.get(site["url"], headers=headers)
-                    tree, type_ = html.fromstring(r.content), site['type']
+                        r = requests.get(site["url"], headers=headers)
+                        tree, type_ = html.fromstring(r.content), site['type']
 
-                    # if ips are listed in a table and not referenced by a sepcific class or id
-                    if type_ == "table":
-                        # print("[+] Type : table...")
-                        tr_array = tree.xpath(site['tr_array'])
-                        # print("[+] tr_array: ", tr_array)
-                        for ii, tr in enumerate(tr_array):
-                            td_array = tr.xpath('./td//text()')
-                            for i, td_ in enumerate(td_array):
-                                td_array[i] = td_.replace("\r", "").replace("\t", "").replace("\n", "").replace("\\r", "").replace("\\t", "").replace("\\n", "").replace(" ", "")
+                        # if ips are listed in a table and not referenced by a sepcific class or id
+                        if type_ == "table" or type_ == "table_port_hide":
+                            # print("[+] Type : table...")
+                            tr_array = tree.xpath(site['tr_array'])
+                            count_to_shutdown_from_checkport = 0
+                            # print("[+] tr_array: ", tr_array)
+                            for ii, tr in enumerate(tr_array):
+                                td_array = tr.xpath('./td//text()')
+                                for i, td_ in enumerate(td_array):
+                                    td_array[i] = td_.replace("\r", "").replace("\t", "").replace("\n", "").replace("\\r", "").replace("\\t", "").replace("\\n", "").replace(" ", "")
 
-                            # print("[+] td_array: ", td_array)
-                            if len(td_array) > 2:
-                                try:
-                                    site_ip_address, port_, country_ = "", "", ""
+                                # print("[+] td_array: ", td_array)
+                                if len(td_array) > 2:
+                                    try:
+                                        site_ip_address, port_, country_ = "", "", ""
 
-                                    if site['port'] == -1: port_ = tr.xpath(site['port_selector'])
-                                    else: port_ = td_array[site['port']]
+                                        if (type_ != "table_port_hide"):
+                                            if site['port'] == -1: port_ = tr.xpath(site['port_selector'])
+                                            else: port_ = td_array[site['port']]
 
-                                    if site['country'] == -1: country_ = tr.xpath(site['country_selector'])
-                                    else: country_ = td_array[site['country']]
+                                        if site['country'] == -1: country_ = tr.xpath(site['country_selector'])
+                                        else: country_ = td_array[site['country']]
 
-                                    if site['ip_address'] == -1:
-                                        site_ip_address = tr.xpath([site['ip_address_selector']])
-                                    else:
-                                        # print("[+] site_ip_address: ", td_array[site['ip_address']])
-                                        if "document." in td_array[site['ip_address']]:
-                                            site_ip_address_to_evaluate = td_array[site['ip_address']].replace("document.write(", "function r(){return ").replace(");", ";}r()").replace("r(;}", "")
+                                        if site['ip_address'] == -1:
+                                            if (type_ == "table_port_hide"):
+                                                site_ip_address = td_array[1]
+                                                chk_port = checkIt(site_ip_address)
+                                                if len(chk_port) > 0:
+                                                    port_ = chk_port[0].split(":")[1]
+                                                    count_to_shutdown_from_checkport += 1
 
-                                            site_ip_address = js2py.eval_js(site_ip_address_to_evaluate)
+                                                if count_to_shutdown_from_checkport >= 2: break
+                                            else:
+                                                site_ip_address = tr.xpath(site['ip_address_selector'])
                                         else:
-                                            site_ip_address = td_array[site['ip_address']]
+                                            # print("[+] site_ip_address: ", td_array[site['ip_address']])
+                                            if "document." in td_array[site['ip_address']]:
+                                                site_ip_address_to_evaluate = td_array[site['ip_address']].replace("document.write(", "function r(){return ").replace(");", ";}r()").replace("r(;}", "")
 
-                                    # print("[+] site_ip_address: ", site_ip_address) # ip_address_selector
+                                                site_ip_address = js2py.eval_js(site_ip_address_to_evaluate)
+                                            else:
+                                                site_ip_address = td_array[site['ip_address']]
 
-                                    if "." in site_ip_address: # si on a des points dans ll'adresse
-                                        ip, port, country = site_ip_address, port_, country_
-                                        save_ip(ip, port, country)
-                                        # We stop the loop if we reach a nlimit number of ip address we wanted at the start
-                                        if limit != None:
-                                            if count >= limit:
-                                                stoploop = True
-                                                break
-                                        count += 1
-                                except Exception as es: pass
-                    elif type_ == "json":
-                        object_array = tree.xpath(site['object_array'])
-                        obj_brak, obj_json_elt = False, "["
-                        # print("object_array: ", object_array)
-                        for i, obj_element in enumerate(object_array):
-                            if i > 0 and i < (len(object_array)-5):
-                                for obj in obj_element:
-                                    if not obj_brak:
-                                        if '{' in obj:
-                                            obj_brak = True
-                                            obj_json_elt += '{'
-                                    elif '}' in obj:
-                                        obj_brak = False
-                                        obj_json_elt += '},'
-                                    else:
-                                        obj_json_elt += obj
-                        obj_json_elt += "]"
-                        obj_json_elt = json.loads(obj_json_elt.replace("},]", "}]"))
+                                        # print("[+] site_ip_address: ", site_ip_address) # ip_address_selector
 
-                        for ojson in obj_json_elt:
-                            save_ip(ojson["PROXY_IP"], ojson["PROXY_PORT"], ojson["PROXY_COUNTRY"])
-                            if limit != None:
-                                if count >= limit:
-                                    stoploop = True
-                                    break
-                            count += 1
-                        # print("\n\n>>>>>>> obj_json_elt: ", obj_json_elt)
-                    else: # For the specific referencing
-                        try:
-                            ip_address, ports, countries = tree.xpath(site['ip_address']), tree.xpath(site['port']), tree.xpath(site['country'])
-                            for i, ip in enumerate(ip_address): save_ip(ip, ports[i], countries[i])
-                        except Exception as es: pass
+                                        if "." in site_ip_address: # si on a des points dans ll'adresse
+                                            print("[+]", site_ip_address, port_, country_)
+                                            save_ip(str(site_ip_address), str(port_), str(country_).replace("['", "").replace("']", "").replace(" ", ""))
+                                            # We stop the loop if we reach a nlimit number of ip address we wanted at the start
+                                            if limit != None:
+                                                if count >= limit:
+                                                    stoploop = True
+                                                    break
+                                            count += 1
+                                    except: pass
+                        elif type_ == "json":
+                            object_array = tree.xpath(site['object_array'])
+                            obj_brak, obj_json_elt = False, "["
+                            # print("object_array: ", object_array)
+                            for i, obj_element in enumerate(object_array):
+                                if i > 0 and i < (len(object_array)-5):
+                                    for obj in obj_element:
+                                        if not obj_brak:
+                                            if '{' in obj:
+                                                obj_brak = True
+                                                obj_json_elt += '{'
+                                        elif '}' in obj:
+                                            obj_brak = False
+                                            obj_json_elt += '},'
+                                        else:
+                                            obj_json_elt += obj
+                            obj_json_elt += "]"
+                            obj_json_elt = json.loads(obj_json_elt.replace("},]", "}]"))
 
+                            for ojson in obj_json_elt:
+                                save_ip(ojson["PROXY_IP"], ojson["PROXY_PORT"], ojson["PROXY_COUNTRY"])
+                                if limit != None:
+                                    if count >= limit:
+                                        stoploop = True
+                                        break
+                                count += 1
+                            # print("\n\n>>>>>>> obj_json_elt: ", obj_json_elt)
+                        else: # For the specific referencing
+                            try:
+                                ip_address, ports, countries = tree.xpath(site['ip_address']), tree.xpath(site['port']), tree.xpath(site['country'])
+                                for i, ip in enumerate(ip_address): save_ip(ip, ports[i], countries[i])
+                            except Exception as es: pass
+                    except KeyboardInterrupt as es: pass
         except KeyboardInterrupt as es: print("[+] Stoping the fetching.")
     else: print("[+] Escape the fetching of ip address, it's too early, the life : "+str(life)+" seconds")
 
