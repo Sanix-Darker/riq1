@@ -72,7 +72,10 @@ def sendGet(ip, url):
         [type] -- [description]
     """
     s = requests.Session()
-    s.proxies = {"http": "http://"+ip+"/"}
+    s.proxies = {
+        "http": "http://"+ip+"/",
+        #"https": "http://"+ip+"/",
+    }
     r = s.get(url, headers=headers)
     return r.text
 
@@ -130,7 +133,7 @@ def update_ip_list(limit = None):
                     print("[+] URL-TO-FETCH:", site["url"], "Ctrl+C to skip this URL to another")
                     try:
                         # We stop the loop if we reach a nlimit number of ip address we wanted at the start
-                        if limit != None or stoploop == True:
+                        if limit != None and stoploop == True:
                             if count >= limit: break
 
                         r = requests.get(site["url"], headers=headers)
@@ -243,7 +246,7 @@ def update_ip_list(limit = None):
 
 
 
-def sendRequests(url, nb_request):
+def sendRequests(url, nb_request, limit=None):
     """[summary]
 
     Arguments:
@@ -272,18 +275,19 @@ def sendRequests(url, nb_request):
                 if len(res) < 1000:
                     print("[+] - Res: ", res)
                 print("[+] --------------------------------\n")
-                if count >= nb_request:
-                    stoploop = True
-                    break
+                if limit != None:
+                    if count >= limit:
+                        stoploop = True
+                        break
                 count += 1
 
 
 
-def main_core(nb_request, url):
+def main_core(nb_request, url, limit=None):
     """[The main process]
 
     Arguments:
         nb_request {[type]} -- [description]
         url {[type]} -- [description]
     """
-    sendRequests(url, nb_request)
+    sendRequests(url, nb_request, limit)
