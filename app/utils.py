@@ -20,7 +20,6 @@ except Exception as es:
         print("[+] An error importing settings file!")
         exit()
 
-s = requests.Session()
 headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
 
 def modification_date(filename):
@@ -72,6 +71,7 @@ def sendGet(ip, url):
     Returns:
         [type] -- [description]
     """
+    s = requests.Session()
     s.proxies = {"http": "http://"+ip+"/"}
     r = s.get(url, headers=headers)
     return r.text
@@ -88,6 +88,8 @@ def if_ipaddress_return_it(ip):
 
 
 def save_ip(ip, port, country=""):
+    print("[+]", ip, port, country)
+    ip, port, country = str(ip), str(port), str(country)
     if (if_ipaddress_return_it(ip)): # if the ip is valid
         with open(IP_LIST, "a+") as frr2:
             frr2.write(ip+":"+port+"#"+country+"\n")
@@ -180,8 +182,7 @@ def update_ip_list(limit = None):
                                         # print("[+] site_ip_address: ", site_ip_address) # ip_address_selector
 
                                         if "." in site_ip_address: # si on a des points dans ll'adresse
-                                            print("[+]", site_ip_address, port_, country_)
-                                            save_ip(str(site_ip_address), str(port_), str(country_).replace("['", "").replace("']", "").replace(" ", ""))
+                                            save_ip(site_ip_address, port_, str(country_).replace("['", "").replace("']", "").replace(" ", ""))
                                             # We stop the loop if we reach a nlimit number of ip address we wanted at the start
                                             if limit != None:
                                                 if count >= limit:
@@ -189,7 +190,22 @@ def update_ip_list(limit = None):
                                                     break
                                             count += 1
                                     except: pass
+
+                        elif type_ == "json_api":
+
+                            for i in range(site['nb_call']):
+                                try:
+                                    ojson = json.loads(requests.get(site['url']).content.decode('utf-8'))
+                                    save_ip(ojson[site["ip_address_key"]], ojson[site["port_key"]], ojson[site["country_key"]])
+                                    if limit != None:
+                                        if count >= limit:
+                                            stoploop = True
+                                            break
+                                    count += 1
+                                except: pass
+
                         elif type_ == "json":
+
                             object_array = tree.xpath(site['object_array'])
                             obj_brak, obj_json_elt = False, "["
                             # print("object_array: ", object_array)
@@ -209,7 +225,7 @@ def update_ip_list(limit = None):
                             obj_json_elt = json.loads(obj_json_elt.replace("},]", "}]"))
 
                             for ojson in obj_json_elt:
-                                save_ip(ojson["PROXY_IP"], ojson["PROXY_PORT"], ojson["PROXY_COUNTRY"])
+                                save_ip(ojson[site["ip_address_key"]], ojson[site["port_key"]], ojson[site["country_key"]])
                                 if limit != None:
                                     if count >= limit:
                                         stoploop = True
@@ -227,7 +243,7 @@ def update_ip_list(limit = None):
 
 
 
-def sendRequests(url, nb_request, limit=None):
+def sendRequests(url, nb_request):
     """[summary]
 
     Arguments:
@@ -235,7 +251,7 @@ def sendRequests(url, nb_request, limit=None):
         url {[type]} -- [description]
         nb_request {[type]} -- [description]
     """
-    print("[+] Your current Ip info:"+getIpInfo())
+    #print("[+] Your current Ip info:"+getIpInfo())
     print("[+] ==========================================================================")
     with open(IP_LIST, "r+") as fil_:
         ip_list_array = fil_.readlines()
@@ -253,11 +269,12 @@ def sendRequests(url, nb_request, limit=None):
                 print("[+] - New IP info:"+getIpInfo(ip))
                 res = sendGet(ip, url)
                 print("[+] - Request ["+str(i+1)+"], ip: ["+str(ip).replace("\n", "").replace("\\n", "")+"], url: ["+str(url)+"], length: "+str(len(res))+" !")
+                if len(res) < 1000:
+                    print("[+] - Res: ", res)
                 print("[+] --------------------------------\n")
-                if limit != None:
-                    if count >= limit:
-                        stoploop = True
-                        break
+                if count >= nb_request:
+                    stoploop = True
+                    break
                 count += 1
 
 

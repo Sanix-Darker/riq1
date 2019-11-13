@@ -32,5 +32,13 @@
         "country_selector":"./td//font[contains(@class, 'spy14')]//acronym//text()",
         "type":"table_port_hide",
         "tr_array": "//table[contains(@width, '65%')]//tr"
+    },
+    {
+        "url":"https://api.getproxylist.com/proxy",
+        "ip_address_key":"ip",
+        "port_key":"port",
+        "country_key":"country",
+        "type":"json_api",
+        "nb_call": 5
     }
 ]
