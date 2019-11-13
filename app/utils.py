@@ -82,6 +82,14 @@ def sendGet(ip, url):
 
 
 def if_ipaddress_return_it(ip):
+    """[summary]
+
+    Arguments:
+        ip {[type]} -- [description]
+
+    Returns:
+        [type] -- [description]
+    """
     try:
         parts = ip.split('.')
         return len(parts) == 4 and all(0 <= int(part) < 256 for part in parts)
@@ -91,6 +99,15 @@ def if_ipaddress_return_it(ip):
 
 
 def save_ip(ip, port, country=""):
+    """[summary]
+
+    Arguments:
+        ip {[type]} -- [description]
+        port {[type]} -- [description]
+
+    Keyword Arguments:
+        country {str} -- [description] (default: {""})
+    """
     print("[+]", ip, port, country)
     ip, port, country = str(ip), str(port), str(country)
     if (if_ipaddress_return_it(ip)): # if the ip is valid
@@ -104,6 +121,14 @@ def save_ip(ip, port, country=""):
 
 
 def update_ip_list(limit = None):
+    """[summary]
+
+    Keyword Arguments:
+        limit {[type]} -- [description] (default: {None})
+
+    Returns:
+        [type] -- [description]
+    """
     if limit == 0: limit = 1
     print("[+] ---")
     print("[+] Fetching ip address, please wait a few seconds...")
