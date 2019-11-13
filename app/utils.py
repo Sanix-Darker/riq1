@@ -74,7 +74,7 @@ def sendGet(ip, url):
     s = requests.Session()
     s.proxies = {
         "http": "http://"+ip+"/",
-        #"https": "http://"+ip+"/",
+        "https": "http://"+ip+"/",
     }
     r = s.get(url, headers=headers)
     return r.text
