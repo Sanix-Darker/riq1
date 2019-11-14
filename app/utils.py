@@ -20,6 +20,8 @@ except Exception as es:
         print("[+] An error importing settings file!")
         exit()
 
+
+s = requests.Session()
 headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
 
 def modification_date(filename):
@@ -41,10 +43,11 @@ def getIpInfo(ip=None):
 
     if ip != None:
         print("[+] - Ip:",ip)
-        rr = requests.get("https://ipinfo.io/"+ip.split(":")[0]+"/geo")
-    else: rr = requests.get("https://ipinfo.io/")
+        #rr = sendGet(ip, "https://ipinfo.io/")
+        rr = requests.get("https://ipinfo.io/"+ip.split(":")[0]+"/geo").content.decode('utf-8')
+    else: rr = requests.get("https://ipinfo.io/").content.decode('utf-8')
 
-    try: return json.dumps(json.loads(rr.content), indent=4, sort_keys=True)
+    try: return json.dumps(json.loads(rr), indent=4, sort_keys=True)
     except Exception as es: return "{}"
 
 
@@ -71,12 +74,11 @@ def sendGet(ip, url):
     Returns:
         [type] -- [description]
     """
-    s = requests.Session()
     s.proxies = {
         "http": "http://"+ip+"/",
-        "https": "http://"+ip+"/",
+        #"https": "http://"+ip+"/",
     }
-    r = s.get(url, headers=headers)
+    r = s.get(url)
     return r.text
 
 
@@ -112,7 +114,7 @@ def save_ip(ip, port, country=""):
     ip, port, country = str(ip), str(port), str(country)
     if (if_ipaddress_return_it(ip)): # if the ip is valid
         with open(IP_LIST, "a+") as frr2:
-            frr2.write(ip+":"+port+"#"+country+"\n")
+            frr2.write(ip+":"+port+"\n")
             print("[+] Saving '"+ip+":"+port+"#"+country+"'")
             print("[+] Press Ctrl+C to stop anytime the fetching process.")
             print("[+] ----")
